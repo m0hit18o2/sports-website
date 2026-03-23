@@ -38,7 +38,7 @@ export default async function ScoresPage() {
             Scores
           </h1>
           <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-            Booking grid
+            <span>🏠</span> Home
           </Link>
         </div>
 

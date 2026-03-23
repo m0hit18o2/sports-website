@@ -46,8 +46,8 @@ export default function Home() {
       <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-6">
         Court Booking
       </h1>
-<Link href="/scores" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-  View scores
+<Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+  <span>🏠</span> Home
 </Link>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
