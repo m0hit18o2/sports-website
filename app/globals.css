@@ -1,4 +1,7 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Montserrat:wght@300;400;500&display=swap');
 @import "tailwindcss";
+
 
 :root {
   --background: #ffffff;
@@ -23,4 +26,96 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+
+
+.hero-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+}
+.nav-label {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  font-size: 14px;
+}
+.fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-in.delay-1 { transition-delay: 0.15s; }
+.fade-in.delay-2 { transition-delay: 0.3s; }
+.fade-in.delay-3 { transition-delay: 0.45s; }
+.fade-in.delay-4 { transition-delay: 0.6s; }
+
+.google-btn {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: transparent;
+  color: white;
+  padding: 14px 40px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.google-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.6);
+}
+
+.photo-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.photo-slide.active {
+  opacity: 1;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.dot.active {
+  background: white;
+}
+
+.divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(255,255,255,0.2);
+  margin: 0 auto;
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgb(228 228 231);
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+  color: inherit;
+}
+.input:focus {
+  border-color: rgb(96 165 250);
 }
