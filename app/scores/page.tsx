@@ -1,3 +1,5 @@
+"use client";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -14,18 +16,23 @@ type Event = {
   courts: { name: string };
 };
 
-async function getEvents() {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*, courts(name)")
-    .order("date", { ascending: false });
+export default function ScoresPage() {
+  const [events, setEvents] = useState<Event[]>([]);
 
-  if (error) throw error;
-  return data as Event[];
-}
+  async function fetchEvents() {
+    const { data } = await supabase
+      .from("events")
+      .select("*, courts(name)")
+      .order("date", { ascending: false });
+    if (data) setEvents(data as Event[]);
+  }
 
-export default async function ScoresPage() {
-  const events = await getEvents();
+  useEffect(() => {
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
   const active = events.filter((e) => e.is_active);
   const completed = events.filter((e) => !e.is_active);
 
@@ -37,7 +44,7 @@ export default async function ScoresPage() {
           <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">
             Scores
           </h1>
-          <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+          <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
             <span>🏠</span> Home
           </Link>
         </div>
@@ -55,16 +62,22 @@ export default async function ScoresPage() {
           </section>
         )}
 
-        <section>
-          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
-            Completed
-          </h2>
-          <div className="flex flex-col gap-3">
-            {completed.map((event) => (
-              <EventCard key={event.id} event={event} />
-            ))}
-          </div>
-        </section>
+        {completed.length > 0 && (
+          <section>
+            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+              Completed
+            </h2>
+            <div className="flex flex-col gap-3">
+              {completed.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {events.length === 0 && (
+          <p className="text-sm text-zinc-400 text-center py-12">No events yet</p>
+        )}
 
       </div>
     </div>
@@ -94,7 +107,8 @@ function EventCard({ event }: { event: Event }) {
         <div className={`flex-1 flex items-center justify-between rounded-lg px-3 py-2
           ${winner === "a" ? "bg-blue-50 dark:bg-blue-900/20" : "bg-zinc-50 dark:bg-zinc-800"}`}>
           <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_a}</span>
-          <span className={`text-lg font-semibold ${winner === "a" ? "text-blue-600 dark:text-blue-400" : "text-zinc-800 dark:text-zinc-100"}`}>
+          <span className={`text-lg font-semibold
+            ${winner === "a" ? "text-blue-600 dark:text-blue-400" : "text-zinc-800 dark:text-zinc-100"}`}>
             {event.score_a}
           </span>
         </div>
@@ -104,7 +118,8 @@ function EventCard({ event }: { event: Event }) {
         <div className={`flex-1 flex items-center justify-between rounded-lg px-3 py-2
           ${winner === "b" ? "bg-blue-50 dark:bg-blue-900/20" : "bg-zinc-50 dark:bg-zinc-800"}`}>
           <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_b}</span>
-          <span className={`text-lg font-semibold ${winner === "b" ? "text-blue-600 dark:text-blue-400" : "text-zinc-800 dark:text-zinc-100"}`}>
+          <span className={`text-lg font-semibold
+            ${winner === "b" ? "text-blue-600 dark:text-blue-400" : "text-zinc-800 dark:text-zinc-100"}`}>
             {event.score_b}
           </span>
         </div>
