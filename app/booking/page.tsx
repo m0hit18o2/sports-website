@@ -94,14 +94,6 @@ export default function BookingPage() {
           <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">
             Court Booking
           </h1>
-          <div className="flex items-center gap-4">
-            <Link href="/scores" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-              Scores
-            </Link>
-            <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-              <span>🏠</span> Home
-            </Link>
-          </div>
         </div>
 
         {/* Date picker */}

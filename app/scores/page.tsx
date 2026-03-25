@@ -42,11 +42,8 @@ export default function ScoresPage() {
 
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100">
-            Scores
+            Events
           </h1>
-          <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-            <span>🏠</span> Home
-          </Link>
         </div>
 
         {active.length > 0 && (
