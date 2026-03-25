@@ -18,7 +18,7 @@ type User = {
 
 const NAV_LINKS = [
   { href: "/booking", label: "Booking" },
-  { href: "/scores", label: "Scores" },
+  { href: "/scores", label: "Events" },
   { href: "/gallery", label: "Gallery" },
 ];
 
@@ -89,7 +89,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-between p-5 border-b border-zinc-100 dark:border-zinc-800">
           <Link href="/" onClick={() => setOpen(false)}>
             <span className="text-sm font-medium tracking-widest text-zinc-800 dark:text-zinc-100">
-              SPORTS VENUE
+              HOME
             </span>
           </Link>
           <button
