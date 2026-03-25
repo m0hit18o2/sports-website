@@ -1,8 +1,15 @@
+
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isAdmin } from "@/lib/admins";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+
+
+
+
 
 type User = {
   email: string | undefined;
@@ -19,6 +26,15 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+        if (!isAdmin(data.session?.user?.email)) {
+        router.replace("/");
+        }
+    });
+    }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -100,6 +116,19 @@ export default function Sidebar() {
               {link.label}
             </Link>
           ))}
+        {isAdmin(user?.email) && (
+        <Link
+            href="/admin"
+            onClick={() => setOpen(false)}
+            className={`px-4 py-3 rounded-lg text-sm font-medium transition-colors
+            ${pathname === "/admin"
+                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
+            }`}
+        >
+            Admin
+        </Link>
+        )}
         </nav>
 
         {/* User section at bottom */}
