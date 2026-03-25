@@ -49,7 +49,7 @@ export default function LandingClient({ photos }: { photos: string[] }) {
           <div className="mt-4 mb-3 text-center">
             <p className="nav-label text-white/40 tracking-[0.3em]">GALLERY</p>
           </div>
-          <div className="relative h-56 md:h-72 overflow-hidden">
+          <div className="relative h-56 md:h-96 overflow-hidden">
             {photos.map((photo, i) => (
               <div
                 key={i}
