@@ -81,6 +81,13 @@ export default function BookingPage() {
     setLoading(false);
   }
 
+  useEffect(() => {
+  fetchSlots();
+  const interval = setInterval(fetchSlots, 15000);
+  return () => clearInterval(interval);
+  }, [date]);
+
+
   async function handleBook() {
   if (!selected || !name.trim() || !phone.trim()) return;
   setBooking(true);
