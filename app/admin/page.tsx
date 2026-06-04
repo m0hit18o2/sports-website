@@ -128,22 +128,22 @@ function EventsTab() {
         <div className="grid grid-cols-2 gap-3">
           <input placeholder="Event name" value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="col-span-2 input" />
+            className="col-span-2 w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
           <input type="date" value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
-            className="input" />
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
           <select value={form.court_id}
             onChange={(e) => setForm({ ...form, court_id: e.target.value })}
-            className="input">
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors">
             <option value="1">Court 1</option>
             <option value="2">Court 2</option>
           </select>
           <input placeholder="Team A" value={form.team_a}
             onChange={(e) => setForm({ ...form, team_a: e.target.value })}
-            className="input" />
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
           <input placeholder="Team B" value={form.team_b}
             onChange={(e) => setForm({ ...form, team_b: e.target.value })}
-            className="input" />
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
         </div>
         <button onClick={createEvent}
           className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">

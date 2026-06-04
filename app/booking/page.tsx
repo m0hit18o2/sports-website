@@ -276,21 +276,21 @@ function handleSlotClick(slot: Slot) {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-600 transition-colors"
               />
               <input
                 type="text"
                 placeholder="Roll number"
                 value={rollNo}
                 onChange={(e) => setRollNo(e.target.value)}
-                className="input"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-600 transition-colors"
               />
               <input
                 type="tel"
                 placeholder="Phone number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="input"
+                className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-600 transition-colors"
               />
             </div>
             <div className="flex gap-2">
