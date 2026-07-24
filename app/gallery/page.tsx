@@ -1,16 +1,24 @@
+"use client";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
-async function getPhotos() {
-  const { data } = await supabase
-    .from("photos")
-    .select("url")
-    .eq("is_active", true)
-    .order("uploaded_at", { ascending: false });
-  return data ?? [];
-}
+export default function GalleryPage() {
+  const [photos, setPhotos] = useState<{ url: string }[]>([]);
 
-export default async function GalleryPage() {
-  const photos = await getPhotos();
+  async function fetchPhotos() {
+    const { data } = await supabase
+      .from("photos")
+      .select("url")
+      .eq("is_active", true)
+      .order("uploaded_at", { ascending: false });
+    if (data) setPhotos(data);
+  }
+
+  useEffect(() => {
+    fetchPhotos();
+    const interval = setInterval(fetchPhotos, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 pt-16">

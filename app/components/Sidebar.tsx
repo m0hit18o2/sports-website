@@ -17,7 +17,6 @@ type User = {
 };
 
 const NAV_LINKS = [
-  { href: "/booking", label: "Booking" },
   { href: "/scores", label: "Events" },
   { href: "/gallery", label: "Gallery" },
 ];
