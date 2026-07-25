@@ -7,6 +7,7 @@ type Event = {
   id: number;
   name: string;
   date: string;
+  start_time: string;
   court_id: number;
   team_a: string;
   team_b: string;
@@ -74,7 +75,7 @@ export default function AdminPage() {
 function EventsTab() {
   const [events, setEvents] = useState<Event[]>([]);
   const [form, setForm] = useState({
-    name: "", date: "", court_id: "1", team_a: "", team_b: ""
+    name: "", date: "", start_time: "", court_id: "1", team_a: "", team_b: ""
   });
 
   useEffect(() => { fetchEvents(); }, []);
@@ -96,7 +97,7 @@ function EventsTab() {
       score_b: 0,
       is_active: true,
     });
-    setForm({ name: "", date: "", court_id: "1", team_a: "", team_b: "" });
+    setForm({ name: "", date: "", start_time: "", court_id: "1", team_a: "", team_b: "" });
     fetchEvents();
   }
 
@@ -131,7 +132,10 @@ function EventsTab() {
             className="col-span-2 w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
           <input type="date" value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+          <input type="time" value={form.start_time}
+            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />          
           <select value={form.court_id}
             onChange={(e) => setForm({ ...form, court_id: e.target.value })}
             className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors">
@@ -159,7 +163,7 @@ function EventsTab() {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{event.name}</p>
-                <p className="text-xs text-zinc-400">{event.date} · Court {event.court_id}</p>
+                <p className="text-xs text-zinc-400">{event.date} {event.start_time ?? ""} · Court {event.court_id}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => toggleActive(event.id, event.is_active)}
