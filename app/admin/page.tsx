@@ -9,12 +9,16 @@ type Event = {
   date: string;
   start_time: string;
   court_id: number;
+  sport_id: number;
   team_a: string;
   team_b: string;
   score_a: number;
   score_b: number;
   is_active: boolean;
+  courts: { name: string };
 };
+
+type Court = { id: number; name: string };
 
 type Photo = {
   id: number;
@@ -72,32 +76,50 @@ export default function AdminPage() {
   );
 }
 
+type Sport = { id: number; name: string };
+
 function EventsTab() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [courts, setCourts] = useState<Court[]>([]);
   const [form, setForm] = useState({
-    name: "", date: "", start_time: "", court_id: "1", team_a: "", team_b: ""
+    name: "", date: "", start_time: "", court_id: "", sport_id: "", team_a: "", team_b: ""
   });
 
-  useEffect(() => { fetchEvents(); }, []);
+  useEffect(() => { fetchEvents(); fetchSports(); fetchCourts(); }, []);
 
   async function fetchEvents() {
     const { data } = await supabase
       .from("events")
-      .select("*")
+      .select("*, courts(name)")
       .order("date", { ascending: false });
     if (data) setEvents(data);
   }
 
+  async function fetchSports() {
+    const { data } = await supabase.from("sports").select("*").order("name");
+    if (data) setSports(data);
+  }
+
+  async function fetchCourts() {
+    const { data } = await supabase.from("courts").select("*").order("id");
+    if (data) {
+      setCourts(data);
+      setForm((f) => (f.court_id ? f : { ...f, court_id: data[0] ? String(data[0].id) : "" }));
+    }
+  }
+
   async function createEvent() {
-    if (!form.name || !form.date || !form.team_a || !form.team_b) return;
+    if (!form.name || !form.date || !form.court_id || !form.team_a || !form.team_b) return;
     await supabase.from("events").insert({
       ...form,
       court_id: parseInt(form.court_id),
+      sport_id: form.sport_id ? parseInt(form.sport_id) : null,
       score_a: 0,
       score_b: 0,
       is_active: true,
     });
-    setForm({ name: "", date: "", start_time: "", court_id: "1", team_a: "", team_b: "" });
+    setForm((f) => ({ name: "", date: "", start_time: "", court_id: f.court_id, sport_id: "", team_a: "", team_b: "" }));
     fetchEvents();
   }
 
@@ -138,9 +160,19 @@ function EventsTab() {
             className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />          
           <select value={form.court_id}
             onChange={(e) => setForm({ ...form, court_id: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors">
-            <option value="1">Court 1</option>
-            <option value="2">Court 2</option>
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value="">Select court</option>
+            {courts.map((c) => (
+              <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <select value={form.sport_id}
+            onChange={(e) => setForm({ ...form, sport_id: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value="">Select sport</option>
+            {sports.map((s) => (
+              <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={s.id} value={s.id}>{s.name}</option>
+            ))}
           </select>
           <input placeholder="Team A" value={form.team_a}
             onChange={(e) => setForm({ ...form, team_a: e.target.value })}
@@ -163,7 +195,7 @@ function EventsTab() {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{event.name}</p>
-                <p className="text-xs text-zinc-400">{event.date} {event.start_time ?? ""} · Court {event.court_id}</p>
+                <p className="text-xs text-zinc-400">{event.date} {event.start_time ?? ""} · {event.courts?.name ?? "Unknown court"}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => toggleActive(event.id, event.is_active)}

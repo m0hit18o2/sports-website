@@ -117,6 +117,10 @@ export default function BookingPage() {
   setBooking(false);
 }
 
+function courtName(courts: Court[], courtId: number) {
+  return courts.find((c) => c.id === courtId)?.name ?? `Court ${courtId}`;
+}
+
 function isPast(date: string, startTime: string) {
   const slotDate = new Date(`${date}T${startTime}`);
   return slotDate < new Date();
@@ -268,7 +272,7 @@ function handleSlotClick(slot: Slot) {
               Book slot
             </h2>
             <p className="text-sm text-zinc-500 mb-4">
-              {formatTime(selected.start_time)} – {formatTime(selected.end_time)} · Court {selected.court_id}
+              {formatTime(selected.start_time)} – {formatTime(selected.end_time)} · {courtName(courts, selected.court_id)}
             </p>
             <div className="flex flex-col gap-3 mb-4">
               <input
@@ -319,7 +323,7 @@ function handleSlotClick(slot: Slot) {
               Slot details
             </h2>
             <p className="text-sm text-zinc-500 mb-4">
-              {formatTime(viewSlot.start_time)} – {formatTime(viewSlot.end_time)} · Court {viewSlot.court_id}
+              {formatTime(viewSlot.start_time)} – {formatTime(viewSlot.end_time)} · {courtName(courts, viewSlot.court_id)}
             </p>
             <div className="flex flex-col gap-2 mb-5">
               <div className="flex justify-between text-sm">

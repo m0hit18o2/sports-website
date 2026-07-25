@@ -7,34 +7,77 @@ type Event = {
   id: number;
   name: string;
   date: string;
+  start_time: string | null;
   court_id: number;
+  sport_id: number | null;
   team_a: string;
   team_b: string;
   score_a: number;
   score_b: number;
-  is_active: boolean;
   courts: { name: string };
+  sports: { name: string } | null;
 };
+
+function formatTime(time: string) {
+  const [h, m] = time.split(":");
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const display = hour == 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${display}:${m} ${ampm}`;
+}
+
+type Sport = { id: number; name: string };
+
+const ANY = "any";
 
 export default function ScoresPage() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [teams, setTeams] = useState<string[]>([]);
+
+  const [dateFilter, setDateFilter] = useState("");
+  const [sportFilter, setSportFilter] = useState(ANY);
+  const [teamFilter, setTeamFilter] = useState(ANY);
+
+  async function fetchFilterOptions() {
+    const [{ data: sportsData }, { data: eventsData }] = await Promise.all([
+      supabase.from("sports").select("*").order("name"),
+      supabase.from("events").select("team_a, team_b"),
+    ]);
+    if (sportsData) setSports(sportsData as Sport[]);
+    if (eventsData) {
+      const teamSet = new Set<string>();
+      eventsData.forEach((e: { team_a: string; team_b: string }) => {
+        if (e.team_a) teamSet.add(e.team_a);
+        if (e.team_b) teamSet.add(e.team_b);
+      });
+      setTeams(Array.from(teamSet).sort());
+    }
+  }
 
   async function fetchEvents() {
-    const { data } = await supabase
+    let query = supabase
       .from("events")
-      .select("*, courts(name)")
+      .select("*, courts(name), sports(name)")
       .order("date", { ascending: false });
+
+    if (dateFilter) query = query.eq("date", dateFilter);
+    if (sportFilter !== ANY) query = query.eq("sport_id", sportFilter);
+    if (teamFilter !== ANY) query = query.or(`team_a.eq.${teamFilter},team_b.eq.${teamFilter}`);
+
+    const { data } = await query;
     if (data) setEvents(data as Event[]);
   }
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, []);
 
   useEffect(() => {
     fetchEvents();
     const interval = setInterval(fetchEvents, 15000);
     return () => clearInterval(interval);
-  }, []);
-
-  const active = events.filter((e) => e.is_active);
-  const completed = events.filter((e) => !e.is_active);
+  }, [dateFilter, sportFilter, teamFilter]);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6">
@@ -46,34 +89,49 @@ export default function ScoresPage() {
           </h1>
         </div>
 
-        {active.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
-              Live now
-            </h2>
-            <div className="flex flex-col gap-3">
-              {active.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </section>
-        )}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+          />
+          <select
+            value={sportFilter}
+            onChange={(e) => setSportFilter(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+          >
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value={ANY}>Any sport</option>
+            {sports.map((s) => (
+              <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <select
+            value={teamFilter}
+            onChange={(e) => setTeamFilter(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+          >
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value={ANY}>Any team</option>
+            {teams.map((t) => (
+              <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
 
-        {completed.length > 0 && (
-          <section>
-            <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
-              Completed
-            </h2>
-            <div className="flex flex-col gap-3">
-              {completed.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          </section>
+        {events.length > 0 && (
+          <div className="flex flex-col gap-3">
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
         )}
 
         {events.length === 0 && (
-          <p className="text-sm text-zinc-400 text-center py-12">No events yet</p>
+          <p className="text-sm text-zinc-400 text-center py-12">
+            {dateFilter || sportFilter !== ANY || teamFilter !== ANY
+              ? "No events match these filters"
+              : "No events yet"}
+          </p>
         )}
 
       </div>
@@ -88,16 +146,12 @@ function EventCard({ event }: { event: Event }) {
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{event.name}</p>
-          <p className="text-xs text-zinc-400">{event.courts.name} · {event.date}</p>
-        </div>
-        {event.is_active && (
-          <span className="text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
-            Live
-          </span>
-        )}
+      <div className="mb-3">
+        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{event.name}</p>
+        <p className="text-xs text-zinc-400">
+          {event.sports?.name ? `${event.sports.name} · ` : ""}{event.courts.name} · {event.date}
+          {event.start_time ? ` · ${formatTime(event.start_time)}` : ""}
+        </p>
       </div>
 
       <div className="flex items-center gap-3">
