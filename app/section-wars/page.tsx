@@ -22,7 +22,7 @@ type Team = {
   id: number;
   name: string;
   total_points: number;
-  finals_won: number;
+  finals: number;
   icon_url: string | null;
 };
 
@@ -237,7 +237,7 @@ function LeaderboardTab() {
             <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800" />
           )}
           <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{team.name}</span>
-          <span className="text-sm text-zinc-600 dark:text-zinc-300 text-center">{team.finals_won}</span>
+          <span className="text-sm text-zinc-600 dark:text-zinc-300 text-center">{team.finals}</span>
           <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 text-center">{team.total_points}</span>
         </div>
       ))}

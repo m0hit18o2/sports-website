@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
 
 type Event = {
   id: number;
@@ -27,7 +26,7 @@ type Team = {
   id: number;
   name: string;
   total_points: number;
-  finals_won: number;
+  finals: number;
   icon_url: string | null;
 };
 
@@ -59,9 +58,6 @@ export default function AdminPage() {
         <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-6">
           Admin Panel
         </h1>
-        <Link href="/" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-        <span>🏠</span> Home
-        </Link>
         {/* Tabs */}
         <div className="flex gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl mb-8 w-fit">
           {TABS.map((t) => (
@@ -193,10 +189,10 @@ function EventsTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input type="date" value={form.date}
             onChange={(e) => setForm({ ...form, date: e.target.value })}
-                      className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+                      className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]" />
           <input type="time" value={form.start_time}
             onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]" />
           <select value={form.court_id}
             onChange={(e) => setForm({ ...form, court_id: e.target.value })}
             className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
@@ -325,7 +321,7 @@ function EventsTab() {
               </div>
             </div>
 
-            {/* Result: winner + points, independent of teams.total_points/finals_won */}
+            {/* Result: winner + points, independent of teams.total_points/finals */}
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
               <select
                 value={event.winner ?? ""}
@@ -507,10 +503,10 @@ function LeaderboardTab() {
     fetchTeams();
   }
 
-  async function adjustFinalsWon(id: number, delta: number) {
+  async function adjustFinals(id: number, delta: number) {
     const team = teams.find((t) => t.id === id)!;
-    const newVal = Math.max(0, team.finals_won + delta);
-    await supabase.from("teams").update({ finals_won: newVal }).eq("id", id);
+    const newVal = Math.max(0, team.finals + delta);
+    await supabase.from("teams").update({ finals: newVal }).eq("id", id);
     fetchTeams();
   }
 
@@ -546,15 +542,15 @@ function LeaderboardTab() {
           <span className="flex-1 text-sm font-medium text-zinc-800 dark:text-zinc-100">{team.name}</span>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400 w-20">Finals Won</span>
-            <button onClick={() => adjustFinalsWon(team.id, -1)}
+            <span className="text-xs text-zinc-400 w-20">Finals</span>
+            <button onClick={() => adjustFinals(team.id, -1)}
               className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
               −
             </button>
             <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 w-6 text-center">
-              {team.finals_won}
+              {team.finals}
             </span>
-            <button onClick={() => adjustFinalsWon(team.id, 1)}
+            <button onClick={() => adjustFinals(team.id, 1)}
               className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
               +
             </button>
