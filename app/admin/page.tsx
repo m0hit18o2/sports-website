@@ -9,8 +9,12 @@ type Event = {
   start_time: string;
   court_id: number;
   sport_id: number;
-  team_a: string;
-  team_b: string;
+  team_a_id: number | null;
+  team_b_id: number | null;
+  team_a: { name: string } | null;
+  team_b: { name: string } | null;
+  winner: number | null;
+  points: number | null;
   score_a: number;
   score_b: number;
   courts: { name: string };
@@ -18,6 +22,14 @@ type Event = {
 };
 
 type Court = { id: number; name: string };
+
+type Team = {
+  id: number;
+  name: string;
+  total_points: number;
+  finals_won: number;
+  icon_url: string | null;
+};
 
 type Photo = {
   id: number;
@@ -36,7 +48,7 @@ type Booking = {
   courts: { name: string };
 };
 
-const TABS = ["Events", "Bookings", "Gallery"];
+const TABS = ["Events", "Bookings", "Gallery", "Leaderboard"];
 
 export default function AdminPage() {
   const [tab, setTab] = useState("Events");
@@ -70,6 +82,7 @@ export default function AdminPage() {
         {tab === "Events" && <EventsTab />}
         {tab === "Bookings" && <BookingsTab />}
         {tab === "Gallery" && <GalleryTab />}
+        {tab === "Leaderboard" && <LeaderboardTab />}
       </div>
     </div>
   );
@@ -83,9 +96,9 @@ function EventsTab() {
   const [events, setEvents] = useState<Event[]>([]);
   const [sports, setSports] = useState<Sport[]>([]);
   const [courts, setCourts] = useState<Court[]>([]);
-  const [teams, setTeams] = useState<string[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [form, setForm] = useState({
-    date: "", start_time: "", court_id: "", sport_id: "", team_a: "", team_b: ""
+    date: "", start_time: "", court_id: "", sport_id: "", team_a_id: "", team_b_id: ""
   });
 
   const [dateFilter, setDateFilter] = useState("");
@@ -101,27 +114,20 @@ function EventsTab() {
   async function fetchEvents() {
     let query = supabase
       .from("events")
-      .select("*, courts(name), sports(name)")
+      .select("*, courts(name), sports(name), team_a:teams!events_team_a_id_fkey(name), team_b:teams!events_team_b_id_fkey(name)")
       .order("date", { ascending: false });
 
     if (dateFilter) query = query.eq("date", dateFilter);
     if (sportFilter !== ANY) query = query.eq("sport_id", sportFilter);
-    if (teamFilter !== ANY) query = query.or(`team_a.eq.${teamFilter},team_b.eq.${teamFilter}`);
+    if (teamFilter !== ANY) query = query.or(`team_a_id.eq.${teamFilter},team_b_id.eq.${teamFilter}`);
 
     const { data } = await query;
-    if (data) setEvents(data);
+    if (data) setEvents(data as unknown as Event[]);
   }
 
   async function fetchTeams() {
-    const { data } = await supabase.from("events").select("team_a, team_b");
-    if (data) {
-      const teamSet = new Set<string>();
-      data.forEach((e: { team_a: string; team_b: string }) => {
-        if (e.team_a) teamSet.add(e.team_a);
-        if (e.team_b) teamSet.add(e.team_b);
-      });
-      setTeams(Array.from(teamSet).sort());
-    }
+    const { data } = await supabase.from("teams").select("*").order("name");
+    if (data) setTeams(data);
   }
 
   async function fetchSports() {
@@ -138,17 +144,20 @@ function EventsTab() {
   }
 
   async function createEvent() {
-    if (!form.date || !form.court_id || !form.team_a || !form.team_b) return;
+    if (!form.date || !form.court_id || !form.team_a_id || !form.team_b_id) return;
+    if (form.team_a_id === form.team_b_id) return;
     await supabase.from("events").insert({
-      ...form,
+      date: form.date,
+      start_time: form.start_time || null,
       court_id: parseInt(form.court_id),
       sport_id: form.sport_id ? parseInt(form.sport_id) : null,
+      team_a_id: parseInt(form.team_a_id),
+      team_b_id: parseInt(form.team_b_id),
       score_a: 0,
       score_b: 0,
     });
-    setForm((f) => ({ date: "", start_time: "", court_id: f.court_id, sport_id: "", team_a: "", team_b: "" }));
+    setForm((f) => ({ date: "", start_time: "", court_id: f.court_id, sport_id: "", team_a_id: "", team_b_id: "" }));
     fetchEvents();
-    fetchTeams();
   }
 
   async function updateScore(id: number, team: "a" | "b", delta: number) {
@@ -160,10 +169,19 @@ function EventsTab() {
     fetchEvents();
   }
 
+  async function updateWinner(id: number, winner: string) {
+    await supabase.from("events").update({ winner: winner ? parseInt(winner) : null }).eq("id", id);
+    fetchEvents();
+  }
+
+  async function updatePoints(id: number, points: string) {
+    await supabase.from("events").update({ points: points ? parseInt(points) : null }).eq("id", id);
+    fetchEvents();
+  }
+
   async function deleteEvent(id: number) {
     await supabase.from("events").delete().eq("id", id);
     fetchEvents();
-    fetchTeams();
   }
 
   return (
@@ -195,12 +213,22 @@ function EventsTab() {
               <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
-          <input placeholder="Team A" value={form.team_a}
-            onChange={(e) => setForm({ ...form, team_a: e.target.value })}
-            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
-          <input placeholder="Team B" value={form.team_b}
-            onChange={(e) => setForm({ ...form, team_b: e.target.value })}
-            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+          <select value={form.team_a_id}
+            onChange={(e) => setForm({ ...form, team_a_id: e.target.value })}
+            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value="">Select team A</option>
+            {teams.map((t) => (
+              <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          <select value={form.team_b_id}
+            onChange={(e) => setForm({ ...form, team_b_id: e.target.value })}
+            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value="">Select team B</option>
+            {teams.map((t) => (
+              <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
         </div>
         <button onClick={createEvent}
           className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
@@ -233,7 +261,7 @@ function EventsTab() {
         >
           <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value={ANY}>Any team</option>
           {teams.map((t) => (
-            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={t} value={t}>{t}</option>
+            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>
       </div>
@@ -260,7 +288,7 @@ function EventsTab() {
             <div className="flex items-center gap-3">
               {/* Team A score */}
               <div className="flex-1 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800 rounded-lg px-3 py-2">
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_a}</span>
+                <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_a?.name ?? "TBD"}</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => updateScore(event.id, "a", -1)}
                     className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
@@ -280,7 +308,7 @@ function EventsTab() {
 
               {/* Team B score */}
               <div className="flex-1 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800 rounded-lg px-3 py-2">
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_b}</span>
+                <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_b?.name ?? "TBD"}</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => updateScore(event.id, "b", -1)}
                     className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
@@ -295,6 +323,33 @@ function EventsTab() {
                   </button>
                 </div>
               </div>
+            </div>
+
+            {/* Result: winner + points, independent of teams.total_points/finals_won */}
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+              <select
+                value={event.winner ?? ""}
+                onChange={(e) => updateWinner(event.id, e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
+                <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value="">No winner</option>
+                {event.team_a_id && (
+                  <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value={event.team_a_id}>
+                    {event.team_a?.name ?? "Team A"} won
+                  </option>
+                )}
+                {event.team_b_id && (
+                  <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" value={event.team_b_id}>
+                    {event.team_b?.name ?? "Team B"} won
+                  </option>
+                )}
+              </select>
+              <input
+                type="number"
+                placeholder="Points"
+                defaultValue={event.points ?? ""}
+                onBlur={(e) => updatePoints(event.id, e.target.value)}
+                className="w-24 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors"
+              />
             </div>
           </div>
         ))}
@@ -417,6 +472,110 @@ function GalleryTab() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function LeaderboardTab() {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  useEffect(() => { fetchTeams(); }, []);
+
+  async function fetchTeams() {
+    const { data } = await supabase.from("teams").select("*").order("name");
+    if (data) setTeams(data);
+  }
+
+  async function uploadIcon(teamId: number, file: File) {
+    setUploadingId(teamId);
+    const filename = `${teamId}-${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("TeamIcons").upload(filename, file);
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("TeamIcons").getPublicUrl(filename);
+      await supabase.from("teams").update({ icon_url: urlData.publicUrl }).eq("id", teamId);
+      fetchTeams();
+    }
+    setUploadingId(null);
+  }
+
+  async function adjustPoints(id: number, delta: number) {
+    const team = teams.find((t) => t.id === id)!;
+    const newPoints = Math.max(0, team.total_points + delta);
+    await supabase.from("teams").update({ total_points: newPoints }).eq("id", id);
+    fetchTeams();
+  }
+
+  async function adjustFinalsWon(id: number, delta: number) {
+    const team = teams.find((t) => t.id === id)!;
+    const newVal = Math.max(0, team.finals_won + delta);
+    await supabase.from("teams").update({ finals_won: newVal }).eq("id", id);
+    fetchTeams();
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {teams.map((team) => (
+        <div key={team.id}
+          className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
+          <div className="relative group w-12 h-12 shrink-0">
+            {team.icon_url ? (
+              <img src={team.icon_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+            )}
+            <button
+              onClick={() => fileRefs.current[team.id]?.click()}
+              disabled={uploadingId === team.id}
+              className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-medium">
+              {uploadingId === team.id ? "..." : "Edit"}
+            </button>
+            <input
+              ref={(el) => { fileRefs.current[team.id] = el; }}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadIcon(team.id, file);
+              }}
+            />
+          </div>
+
+          <span className="flex-1 text-sm font-medium text-zinc-800 dark:text-zinc-100">{team.name}</span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-400 w-20">Finals Won</span>
+            <button onClick={() => adjustFinalsWon(team.id, -1)}
+              className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
+              −
+            </button>
+            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 w-6 text-center">
+              {team.finals_won}
+            </span>
+            <button onClick={() => adjustFinalsWon(team.id, 1)}
+              className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
+              +
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-400 w-14">Points</span>
+            <button onClick={() => adjustPoints(team.id, -1)}
+              className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
+              −
+            </button>
+            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 w-8 text-center">
+              {team.total_points}
+            </span>
+            <button onClick={() => adjustPoints(team.id, 1)}
+              className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
+              +
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -17,7 +17,7 @@ type User = {
 };
 
 const NAV_LINKS = [
-  { href: "/scores", label: "Events" },
+  { href: "/section-wars", label: "Section Wars" },
   { href: "/gallery", label: "Gallery" },
 ];
 
