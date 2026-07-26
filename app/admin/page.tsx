@@ -94,7 +94,7 @@ function EventsTab() {
   const [courts, setCourts] = useState<Court[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [form, setForm] = useState({
-    date: "", start_time: "", court_id: "", sport_id: "", team_a_id: "", team_b_id: ""
+    date: "", start_time: "", court_id: "", sport_id: "", team_a_id: "", team_b_id: "", points: ""
   });
 
   const [dateFilter, setDateFilter] = useState("");
@@ -149,10 +149,11 @@ function EventsTab() {
       sport_id: form.sport_id ? parseInt(form.sport_id) : null,
       team_a_id: parseInt(form.team_a_id),
       team_b_id: parseInt(form.team_b_id),
+      points: form.points ? parseInt(form.points) : null,
       score_a: 0,
       score_b: 0,
     });
-    setForm((f) => ({ date: "", start_time: "", court_id: f.court_id, sport_id: "", team_a_id: "", team_b_id: "" }));
+    setForm((f) => ({ date: "", start_time: "", court_id: f.court_id, sport_id: "", team_a_id: "", team_b_id: "", points: "" }));
     fetchEvents();
   }
 
@@ -165,14 +166,36 @@ function EventsTab() {
     fetchEvents();
   }
 
+  // Reads the team's current total_points fresh from the DB (rather than
+  // trusting local state, which may be stale) before writing the new value.
+  async function adjustTeamTotal(teamId: number, delta: number) {
+    if (!delta) return;
+    const { data } = await supabase.from("teams").select("total_points").eq("id", teamId).single();
+    if (data) {
+      const newTotal = Math.max(0, data.total_points + delta);
+      await supabase.from("teams").update({ total_points: newTotal }).eq("id", teamId);
+    }
+  }
+
   async function updateWinner(id: number, winner: string) {
-    await supabase.from("events").update({ winner: winner ? parseInt(winner) : null }).eq("id", id);
+    const event = events.find((e) => e.id === id)!;
+    const newWinner = winner ? parseInt(winner) : null;
+    const pts = event.points ?? 0;
+    if (event.winner && event.winner !== newWinner) await adjustTeamTotal(event.winner, -pts);
+    if (newWinner && newWinner !== event.winner) await adjustTeamTotal(newWinner, pts);
+    await supabase.from("events").update({ winner: newWinner }).eq("id", id);
     fetchEvents();
+    fetchTeams();
   }
 
   async function updatePoints(id: number, points: string) {
-    await supabase.from("events").update({ points: points ? parseInt(points) : null }).eq("id", id);
+    const event = events.find((e) => e.id === id)!;
+    const newPoints = points ? parseInt(points) : null;
+    const delta = (newPoints ?? 0) - (event.points ?? 0);
+    if (event.winner) await adjustTeamTotal(event.winner, delta);
+    await supabase.from("events").update({ points: newPoints }).eq("id", id);
     fetchEvents();
+    fetchTeams();
   }
 
   async function deleteEvent(id: number) {
@@ -227,6 +250,9 @@ function EventsTab() {
               <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100" key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+          <input type="number" placeholder="Points (optional)" value={form.points}
+            onChange={(e) => setForm({ ...form, points: e.target.value })}
+            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
         </div>
         <button onClick={createEvent}
           className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
@@ -319,7 +345,9 @@ function EventsTab() {
               </div>
             </div>
 
-            {/* Result: winner + points, independent of teams.total_points/finals */}
+            {/* Result: setting a winner credits its points to teams.total_points;
+                changing/removing the winner or editing points afterward keeps
+                that total in sync. finals stays admin/DB-only, untouched here. */}
             <div className="flex items-center gap-3 mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
               <select
                 value={event.winner ?? ""}
