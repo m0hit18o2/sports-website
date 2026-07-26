@@ -61,9 +61,9 @@ export default function LandingClient({ photos }: { photos: string[] }) {
       )}
 
       {/* Footer */}
-      <footer className="text-center py-5 bg-black">
-        <p className="text-[11px] font-light tracking-[0.2em] text-white/25" style={montserrat}>MADE & MAINTINED WITH ❤️ BY Janani &amp; Team</p>
-      </footer>
+      {/* <footer className="text-center py-5 bg-black">
+        <p className="text-[11px] font-light tracking-[0.2em] text-white/25" style={montserrat}>DEVELOPED BY MOHIT</p>
+      </footer> */}
     </div>
   );
 }
