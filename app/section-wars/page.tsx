@@ -205,6 +205,40 @@ function EventCard({ event }: { event: Event }) {
   );
 }
 
+// Standard competition ranking (1, 2, 2, 4): tied teams share a rank,
+// and the next distinct rank skips ahead. `teams` must already be sorted
+// by total_points descending.
+function computeRanks(teams: Team[]): number[] {
+  const ranks: number[] = [];
+  teams.forEach((team, i) => {
+    if (i > 0 && team.total_points === teams[i - 1].total_points) {
+      ranks.push(ranks[i - 1]);
+    } else {
+      ranks.push(i + 1);
+    }
+  });
+  return ranks;
+}
+
+// Actual medal hex colors rather than named Tailwind shades — gold/silver/
+// bronze need to stay clearly distinct from each other and visible against
+// both light and dark backgrounds, which nearby named shades (amber/slate/
+// orange) didn't reliably give us.
+const MEDAL_STYLES: Record<number, { row: string; badge: string }> = {
+  1: {
+    row: "bg-[#FFD700]/15 dark:bg-[#FFD700]/10 border-[#FFD700]/60 dark:border-[#FFD700]/50",
+    badge: "bg-[#FFD700] text-zinc-900",
+  },
+  2: {
+    row: "bg-[#C0C0C0]/25 dark:bg-[#C0C0C0]/15 border-[#C0C0C0] dark:border-[#C0C0C0]/70",
+    badge: "bg-[#C0C0C0] text-zinc-900",
+  },
+  3: {
+    row: "bg-[#CD7F32]/15 dark:bg-[#CD7F32]/15 border-[#CD7F32]/70 dark:border-[#CD7F32]/60",
+    badge: "bg-[#CD7F32] text-zinc-900",
+  },
+};
+
 function LeaderboardTab() {
   const [teams, setTeams] = useState<Team[]>([]);
 
@@ -220,27 +254,39 @@ function LeaderboardTab() {
     if (data) setTeams(data);
   }
 
+  const ranks = computeRanks(teams);
+
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-[2.5rem_1fr_5rem_5rem] gap-3 px-4 py-2 text-xs font-medium text-zinc-400">
+      <div className="grid grid-cols-[2.5rem_2.5rem_1fr_5rem_5rem] gap-3 px-4 py-2 text-xs font-medium text-zinc-400">
+        <span />
         <span />
         <span>Team</span>
         <span className="text-center">Finals</span>
         <span className="text-center">Points</span>
       </div>
-      {teams.map((team) => (
-        <div key={team.id}
-          className="grid grid-cols-[2.5rem_1fr_5rem_5rem] items-center gap-3 bg-white dark:bg-zinc-900 rounded-2xl p-3 border border-zinc-200 dark:border-zinc-800">
-          {team.icon_url ? (
-            <img src={team.icon_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-          )}
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{team.name}</span>
-          <span className="text-sm text-zinc-600 dark:text-zinc-300 text-center">{team.finals}</span>
-          <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 text-center">{team.total_points}</span>
-        </div>
-      ))}
+      {teams.map((team, i) => {
+        const rank = ranks[i];
+        const medal = MEDAL_STYLES[rank];
+        return (
+          <div key={team.id}
+            className={`grid grid-cols-[2.5rem_2.5rem_1fr_5rem_5rem] items-center gap-3 rounded-2xl p-3 border
+              ${medal ? medal.row : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"}`}>
+            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold
+              ${medal ? medal.badge : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"}`}>
+              {rank}
+            </span>
+            {team.icon_url ? (
+              <img src={team.icon_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+            )}
+            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{team.name}</span>
+            <span className="text-sm text-zinc-600 dark:text-zinc-300 text-center">{team.finals}</span>
+            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 text-center">{team.total_points}</span>
+          </div>
+        );
+      })}
       {teams.length === 0 && (
         <p className="text-sm text-zinc-400 text-center py-12">No teams yet</p>
       )}
