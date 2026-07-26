@@ -1,15 +1,40 @@
 "use client";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const montserrat = { fontFamily: "'Montserrat', sans-serif" };
 const cormorant = { fontFamily: "'Cormorant Garamond', Georgia, serif" };
 
-export default function LandingClient({ photos }: { photos: string[] }) {
+export default function LandingClient() {
+  const [photos, setPhotos] = useState<string[]>([]);
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
+  async function fetchPhotos() {
+    const { data } = await supabase
+      .from("photos")
+      .select("url")
+      .eq("is_active", true)
+      .order("uploaded_at", { ascending: false });
+    if (!data) return;
+    const urls = data.map((p) => p.url);
+    // Keep the same array reference when nothing actually changed, so the
+    // cycling effect below (which depends on `photos`) doesn't reset the
+    // slideshow back to the first photo on every 15s poll.
+    setPhotos((prev) =>
+      prev.length === urls.length && prev.every((u, i) => u === urls[i]) ? prev : urls
+    );
+  }
+
   useEffect(() => {
     setLoaded(true);
+    fetchPhotos();
+    const poll = setInterval(fetchPhotos, 15000);
+    return () => clearInterval(poll);
+  }, []);
+
+  useEffect(() => {
+    setCurrent(0);
     if (photos.length === 0) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % photos.length);
