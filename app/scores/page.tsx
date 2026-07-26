@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase";
 
 type Event = {
   id: number;
-  name: string;
   date: string;
   start_time: string | null;
   court_id: number;
@@ -147,8 +146,7 @@ function EventCard({ event }: { event: Event }) {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
       <div className="mb-3">
-        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">{event.name}</p>
-        <p className="text-xs text-zinc-400">
+        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
           {event.sports?.name ? `${event.sports.name} · ` : ""}{event.courts.name} · {event.date}
           {event.start_time ? ` · ${formatTime(event.start_time)}` : ""}
         </p>
