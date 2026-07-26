@@ -10,6 +10,7 @@ type Event = {
   sport_id: number | null;
   team_a_id: number | null;
   team_b_id: number | null;
+  winner: number | null;
   score_a: number;
   score_b: number;
   courts: { name: string };
@@ -167,7 +168,11 @@ function ScheduleTab() {
 }
 
 function EventCard({ event }: { event: Event }) {
+  // An explicitly recorded winner takes priority over the score comparison,
+  // so a decided event still highlights correctly even when scores are null/0-0.
   const winner =
+    event.winner !== null && event.winner === event.team_a_id ? "a" :
+    event.winner !== null && event.winner === event.team_b_id ? "b" :
     event.score_a > event.score_b ? "a" :
     event.score_b > event.score_a ? "b" : null;
 
