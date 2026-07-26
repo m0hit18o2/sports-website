@@ -13,7 +13,6 @@ type Event = {
   team_b: string;
   score_a: number;
   score_b: number;
-  is_active: boolean;
   courts: { name: string };
   sports: { name: string } | null;
 };
@@ -146,7 +145,6 @@ function EventsTab() {
       sport_id: form.sport_id ? parseInt(form.sport_id) : null,
       score_a: 0,
       score_b: 0,
-      is_active: true,
     });
     setForm((f) => ({ date: "", start_time: "", court_id: f.court_id, sport_id: "", team_a: "", team_b: "" }));
     fetchEvents();
