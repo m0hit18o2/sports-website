@@ -162,7 +162,7 @@ function handleSlotClick(slot: Slot) {
   const timeSlots = [...new Set(slots.map((s) => s.start_time))].sort();
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 pt-16">
       <div className="max-w-3xl mx-auto">
 
         <div className="flex items-center justify-between mb-6">

@@ -53,7 +53,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState("Events");
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 pt-16">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-6">
           Admin Panel
@@ -187,12 +187,14 @@ function EventsTab() {
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
         <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4">Create Event</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input type="date" value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-                      className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]" />
-          <input type="time" value={form.start_time}
-            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]" />
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2">
+            <input type="date" value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]" />
+            <input type="time" value={form.start_time}
+              onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+              className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]" />
+          </div>
           <select value={form.court_id}
             onChange={(e) => setForm({ ...form, court_id: e.target.value })}
             className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]">
@@ -238,7 +240,7 @@ function EventsTab() {
           type="date"
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
-          className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+          className="w-full min-w-0 max-w-[10rem] px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-blue-400 transition-colors [color-scheme:light] dark:[color-scheme:dark]"
         />
         <select
           value={sportFilter}
@@ -267,25 +269,21 @@ function EventsTab() {
         {events.map((event) => (
           <div key={event.id}
             className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
-                  {event.sports?.name ? `${event.sports.name} · ` : ""}{event.courts?.name ?? "Unknown court"} · {event.date}{event.start_time ? ` · ${event.start_time}` : ""}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => deleteEvent(event.id)}
-                  className="text-xs text-red-400 hover:text-red-600">
-                  Delete
-                </button>
-              </div>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <p className="flex-1 min-w-0 text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                {event.sports?.name ? `${event.sports.name} · ` : ""}{event.courts?.name ?? "Unknown court"} · {event.date}{event.start_time ? ` · ${event.start_time}` : ""}
+              </p>
+              <button onClick={() => deleteEvent(event.id)}
+                className="shrink-0 text-xs text-red-400 hover:text-red-600">
+                Delete
+              </button>
             </div>
 
             <div className="flex items-center gap-3">
               {/* Team A score */}
-              <div className="flex-1 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800 rounded-lg px-3 py-2">
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_a?.name ?? "TBD"}</span>
-                <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg px-3 py-2">
+                <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{event.team_a?.name ?? "TBD"}</span>
+                <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => updateScore(event.id, "a", -1)}
                     className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
                     −
@@ -303,9 +301,9 @@ function EventsTab() {
               <span className="text-xs text-zinc-400">vs</span>
 
               {/* Team B score */}
-              <div className="flex-1 flex items-center justify-between bg-zinc-50 dark:bg-zinc-800 rounded-lg px-3 py-2">
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">{event.team_b?.name ?? "TBD"}</span>
-                <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg px-3 py-2">
+                <span className="text-sm text-zinc-700 dark:text-zinc-300 truncate">{event.team_b?.name ?? "TBD"}</span>
+                <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => updateScore(event.id, "b", -1)}
                     className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm hover:bg-zinc-300 dark:hover:bg-zinc-600">
                     −
