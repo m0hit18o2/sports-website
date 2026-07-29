@@ -19,6 +19,7 @@ type User = {
 const NAV_LINKS = [
   { href: "/section-wars", label: "Section Wars" },
   { href: "/gallery", label: "Gallery" },
+  { href: "/contact", label: "Contact Us" },
 ];
 
 export default function Sidebar() {
@@ -26,6 +27,10 @@ export default function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+
+  // The homepage has its own persistent top navbar (see HomeNav) instead of
+  // this hamburger drawer.
+  const hidden = pathname === "/";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -59,6 +64,8 @@ export default function Sidebar() {
   async function signOut() {
     await supabase.auth.signOut();
   }
+
+  if (hidden) return null;
 
   return (
     <>
