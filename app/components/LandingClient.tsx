@@ -21,26 +21,46 @@ export default function LandingClient() {
 
       {/* Hero */}
       <div className="relative overflow-hidden">
+        {/* Ring: real photographed arc (top-right quarter, from ring-arc.png)
+            paired with an SVG-drawn arc in the same orange for the rest of
+            the circle, since the source image only contained one segment. */}
+        {/* <div className="absolute -left-32 -top-10 w-[42rem] h-[42rem] hidden sm:block pointer-events-none">
+          <div
+            className="absolute inset-0 bg-contain bg-no-repeat bg-right-top"
+            style={{ backgroundImage: "url('/ring-arc.png')" }}
+          />
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 400" fill="none"> */}
+            {/* Left half of the same circle (cx=200 cy=200 r=190), plain
+                stroke in BRAND_ORANGE to match the image's line color. */}
+            {/* <path d="M 200 10 A 190 190 0 0 0 200 390" stroke={BRAND_ORANGE} strokeWidth="1.5" />
+          </svg>
+        </div> */}
+
+        {/* Bottom-left paint-smear accent: real brush-stroke image (cropped
+            from the same source as ring-arc.png), bleeding off the left edge. */}
         <div
-          className="absolute -left-40 -top-16 w-[50rem] h-[50rem] rounded-full border pointer-events-none hidden sm:block"
-          style={{ borderColor: `${BRAND_ORANGE}70`, borderWidth: 1.5 }}
+          className="absolute right-223 top-66 w-[42rem] h-[25rem] bg-contain bg-no-repeat bg-left-bottom pointer-events-none"
+          style={{ backgroundImage: "url('/proper_accent_transparent.png')" }}
         />
-        {/* Bottom-left paint-smear accent: hand-crafted jagged clip-path,
-            bleeding off the left edge. */}
+
+        {/* Tiger logo: bleeds off the true left edge of the page, sized and
+            positioned independently of the centered text column below so
+            its visual center lands roughly under the navbar logo. */}
         <div
-          className="absolute -left-16 bottom-0 w-[34rem] h-48 pointer-events-none"
-          style={{
-            backgroundColor: BRAND_ORANGE,
-            clipPath:
-              "polygon(0% 45%, 6% 30%, 12% 50%, 18% 25%, 25% 48%, 32% 20%, 40% 42%, 48% 15%, 56% 38%, 64% 10%, 72% 32%, 80% 5%, 88% 28%, 100% 0%, 100% 100%, 0% 100%)",
-          }}
+          className="hidden md:block absolute -left-17 top-0 w-[48rem] h-[36rem] bg-contain bg-no-repeat bg-left pointer-events-none"
+          style={{ backgroundImage: "url('/tiger-transparent.png')" }}
         />
 
         <div className="relative max-w-7xl mx-auto px-6 md:px-10 pt-8 md:pt-16 pb-10 grid md:grid-cols-2 gap-10 items-center">
+          {/* Mobile/tablet: logo shown inline (contained, not bled) since the
+              full-bleed absolute version above is desktop-only. */}
           <div
-            className="h-64 sm:h-80 md:h-[28rem] bg-contain bg-no-repeat bg-center"
-            style={{ backgroundImage: "url('/sports-council-logo.jpeg')" }}
+            className="md:hidden h-64 sm:h-80 bg-contain bg-no-repeat bg-center"
+            style={{ backgroundImage: "url('/tiger-transparent.png')" }}
           />
+          {/* Desktop spacer: reserves the left column so text doesn't
+              overlap the absolutely-positioned bled logo. */}
+          <div className="hidden md:block" aria-hidden />
 
           <div>
             <p className="text-[11px] font-semibold tracking-[0.3em] mb-4" style={{ ...montserrat, color: BRAND_ORANGE }}>
