@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { resizeImage } from "@/lib/resizeImage";
 
 type Event = {
   id: number;
@@ -47,13 +48,13 @@ type Booking = {
   courts: { name: string };
 };
 
-const TABS = ["Events", "Bookings", "Gallery", "Leaderboard"];
+const TABS = ["Events", "Bookings", "Gallery", "Leaderboard", "Announcements"];
 
 export default function AdminPage() {
   const [tab, setTab] = useState("Events");
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 pt-16">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-6">
           Admin Panel
@@ -79,6 +80,7 @@ export default function AdminPage() {
         {tab === "Bookings" && <BookingsTab />}
         {tab === "Gallery" && <GalleryTab />}
         {tab === "Leaderboard" && <LeaderboardTab />}
+        {tab === "Announcements" && <AnnouncementsTab />}
       </div>
     </div>
   );
@@ -440,8 +442,12 @@ function GalleryTab() {
     if (!file) return;
     setUploading(true);
 
-    const filename = `${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("Gallery").upload(filename, file);
+    const resized = await resizeImage(file, 1600, "image/jpeg", 0.82);
+    const filename = `${Date.now()}-${file.name.replace(/\.[^.]+$/, "")}.jpg`;
+    const { error } = await supabase.storage.from("Gallery").upload(filename, resized, {
+      cacheControl: "31536000",
+      contentType: "image/jpeg",
+    });
     if (!error) {
       const { data: urlData } = supabase.storage.from("Gallery").getPublicUrl(filename);
       await supabase.from("photos").insert({ url: urlData.publicUrl, is_active: true });
@@ -512,11 +518,24 @@ function LeaderboardTab() {
 
   async function uploadIcon(teamId: number, file: File) {
     setUploadingId(teamId);
-    const filename = `${teamId}-${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("TeamIcons").upload(filename, file);
+    // Icons only ever render at ~50px, so 256px is generous headroom even
+    // for retina displays — no reason to store/serve multi-MB originals.
+    const resized = await resizeImage(file, 256, "image/png");
+    const filename = `${teamId}-${Date.now()}-${file.name.replace(/\.[^.]+$/, "")}.png`;
+    const previousUrl = teams.find((t) => t.id === teamId)?.icon_url;
+    const { error } = await supabase.storage.from("TeamIcons").upload(filename, resized, {
+      cacheControl: "31536000",
+      contentType: "image/png",
+    });
     if (!error) {
       const { data: urlData } = supabase.storage.from("TeamIcons").getPublicUrl(filename);
       await supabase.from("teams").update({ icon_url: urlData.publicUrl }).eq("id", teamId);
+      // Clean up the old file so repeated re-uploads don't leave orphaned
+      // blobs behind — this is exactly how the bucket ended up bloated before.
+      if (previousUrl) {
+        const previousPath = decodeURIComponent(previousUrl.split("/TeamIcons/")[1] ?? "");
+        if (previousPath) await supabase.storage.from("TeamIcons").remove([previousPath]);
+      }
       fetchTeams();
     }
     setUploadingId(null);
@@ -598,6 +617,96 @@ function LeaderboardTab() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+type Announcement = {
+  id: number;
+  day_label: string;
+  month_label: string;
+  title: string;
+  body: string;
+};
+
+function AnnouncementsTab() {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [form, setForm] = useState({ day_label: "", month_label: "", title: "", body: "" });
+
+  useEffect(() => { fetchAnnouncements(); }, []);
+
+  async function fetchAnnouncements() {
+    const { data } = await supabase.from("announcements").select("*").order("created_at", { ascending: true });
+    if (data) setAnnouncements(data);
+  }
+
+  async function createAnnouncement() {
+    if (!form.day_label || !form.month_label || !form.title || !form.body) return;
+    await supabase.from("announcements").insert(form);
+    setForm({ day_label: "", month_label: "", title: "", body: "" });
+    fetchAnnouncements();
+  }
+
+  async function updateField(id: number, field: keyof Omit<Announcement, "id">, value: string) {
+    await supabase.from("announcements").update({ [field]: value }).eq("id", id);
+    fetchAnnouncements();
+  }
+
+  async function deleteAnnouncement(id: number) {
+    await supabase.from("announcements").delete().eq("id", id);
+    fetchAnnouncements();
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Create */}
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800">
+        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-4">Create Announcement</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input placeholder="Day (e.g. 24 or 24-26)" value={form.day_label}
+            onChange={(e) => setForm({ ...form, day_label: e.target.value })}
+            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+          <input placeholder="Month (e.g. JUL)" value={form.month_label}
+            onChange={(e) => setForm({ ...form, month_label: e.target.value })}
+            className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+          <input placeholder="Title" value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className="sm:col-span-2 w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+          <textarea placeholder="Body" value={form.body} rows={2}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+            className="sm:col-span-2 w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors resize-none" />
+        </div>
+        <button onClick={createAnnouncement}
+          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors">
+          Create Announcement
+        </button>
+      </div>
+
+      {/* List — each field autosaves on blur */}
+      <div className="flex flex-col gap-3">
+        {announcements.map((a) => (
+          <div key={a.id}
+            className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <input defaultValue={a.day_label} onBlur={(e) => updateField(a.id, "day_label", e.target.value)}
+                className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+              <input defaultValue={a.month_label} onBlur={(e) => updateField(a.id, "month_label", e.target.value)}
+                className="w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors" />
+              <input defaultValue={a.title} onBlur={(e) => updateField(a.id, "title", e.target.value)}
+                className="sm:col-span-2 w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm font-medium outline-none focus:border-blue-400 transition-colors" />
+              <textarea defaultValue={a.body} rows={2} onBlur={(e) => updateField(a.id, "body", e.target.value)}
+                className="sm:col-span-2 w-full min-w-0 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent text-sm outline-none focus:border-blue-400 transition-colors resize-none" />
+            </div>
+            <button onClick={() => deleteAnnouncement(a.id)}
+              className="text-xs text-red-400 hover:text-red-600">
+              Delete
+            </button>
+          </div>
+        ))}
+        {announcements.length === 0 && (
+          <p className="text-sm text-zinc-400 text-center py-12">No announcements yet</p>
+        )}
+      </div>
     </div>
   );
 }

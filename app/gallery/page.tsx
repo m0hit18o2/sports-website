@@ -21,7 +21,7 @@ export default function GalleryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6 pt-16">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-semibold text-zinc-800 dark:text-zinc-100 mb-6">
           Gallery
