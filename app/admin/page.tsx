@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { resizeImage } from "@/lib/resizeImage";
+import { isAdmin } from "@/lib/admins";
 
 type Event = {
   id: number;
@@ -52,6 +54,33 @@ const TABS = ["Events", "Bookings", "Gallery", "Leaderboard", "Announcements"];
 
 export default function AdminPage() {
   const [tab, setTab] = useState("Events");
+  const [authorized, setAuthorized] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    function applySession(email: string | undefined) {
+      if (isAdmin(email)) {
+        setAuthorized(true);
+      } else {
+        setAuthorized(false);
+        router.replace("/");
+      }
+      setChecked(true);
+    }
+
+    supabase.auth.getSession().then(({ data }) => applySession(data.session?.user?.email));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session?.user?.email);
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  // Render nothing until the session check resolves (or once it fails) —
+  // avoids flashing the admin UI (including real booking names/phone
+  // numbers) to a non-admin before the redirect kicks in.
+  if (!checked || !authorized) return null;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-6">
