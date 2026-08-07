@@ -19,8 +19,11 @@ type Announcement = {
 export default function LandingClient({ announcements }: { announcements: Announcement[] }) {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      {/* Hero */}
-      <div className="relative overflow-hidden">
+      {/* Hero: min-h keeps this full-size regardless of announcement count —
+          the tiger/accent art below are `absolute`, so they contribute zero
+          height on their own; without this, an empty announcements list
+          would collapse the whole hero down to just the headline's height. */}
+      <div className="relative overflow-hidden min-h-[34rem] md:min-h-[40rem]">
 
         <div
           className="absolute right-223 top-66 w-[42rem] h-[25rem] bg-contain bg-no-repeat bg-left-bottom pointer-events-none"
@@ -75,6 +78,9 @@ export default function LandingClient({ announcements }: { announcements: Announ
                     </div>
                   </div>
                 ))}
+                {announcements.length === 0 && (
+                  <p className="text-sm text-white/40 py-3">No announcements yet — check back soon.</p>
+                )}
               </div>
             </div>
           </div>

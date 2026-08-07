@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 export default function GalleryPage() {
@@ -31,8 +32,8 @@ export default function GalleryPage() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {photos.map((photo, i) => (
-              <div key={i} className="rounded-xl overflow-hidden aspect-video bg-zinc-100 dark:bg-zinc-800">
-                <img src={photo.url} alt="" className="w-full h-full object-cover" />
+              <div key={i} className="relative rounded-xl overflow-hidden aspect-video bg-zinc-100 dark:bg-zinc-800">
+                <Image src={photo.url} alt="" fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" />
               </div>
             ))}
           </div>

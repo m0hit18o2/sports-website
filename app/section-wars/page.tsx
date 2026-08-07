@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 type Event = {
@@ -282,7 +283,7 @@ function LeaderboardTab() {
               {rank}
             </span>
             {team.icon_url ? (
-              <img src={team.icon_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+              <Image src={team.icon_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800" />
             )}

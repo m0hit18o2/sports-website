@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { resizeImage } from "@/lib/resizeImage";
 import { isAdmin } from "@/lib/admins";
@@ -512,7 +513,7 @@ function GalleryTab() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {photos.map((photo) => (
           <div key={photo.id} className="relative group rounded-xl overflow-hidden aspect-video bg-zinc-100 dark:bg-zinc-800">
-            <img src={photo.url} alt="" className="w-full h-full object-cover" />
+            <Image src={photo.url} alt="" fill sizes="(max-width: 768px) 50vw, 33vw" className="object-cover" />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <button onClick={() => togglePhoto(photo.id, photo.is_active)}
                 className={`text-xs px-3 py-1 rounded-full font-medium
@@ -591,7 +592,7 @@ function LeaderboardTab() {
           className="flex flex-col sm:flex-row sm:items-center gap-4 bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800">
           <div className="relative group w-12 h-12 shrink-0">
             {team.icon_url ? (
-              <img src={team.icon_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+              <Image src={team.icon_url} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
             ) : (
               <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800" />
             )}
