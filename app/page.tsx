@@ -1,5 +1,6 @@
 import LandingClient from "./components/LandingClient";
 import { supabase } from "@/lib/supabase";
+import { FINAL_DAY_MODE, STATIC_ANNOUNCEMENT } from "@/lib/finalDayOverride";
 
 // Without this, Next.js statically bakes the announcements list in at build
 // time (Supabase's client uses fetch() under the hood, which Next.js caches
@@ -16,6 +17,6 @@ async function getAnnouncements() {
 }
 
 export default async function Home() {
-  const announcements = await getAnnouncements();
+  const announcements = FINAL_DAY_MODE ? [STATIC_ANNOUNCEMENT] : await getAnnouncements();
   return <LandingClient announcements={announcements} />;
 }

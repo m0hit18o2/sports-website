@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { FINAL_DAY_MODE, STATIC_SCHEDULE, STATIC_LEADERBOARD } from "@/lib/finalDayOverride";
 
 type Event = {
   id: number;
@@ -109,14 +110,42 @@ function ScheduleTab() {
   }
 
   useEffect(() => {
+    if (FINAL_DAY_MODE) return; // static schedule below, no live data needed
     fetchFilterOptions();
   }, []);
 
   useEffect(() => {
+    if (FINAL_DAY_MODE) return;
     fetchEvents();
     const interval = setInterval(fetchEvents, 15000);
     return () => clearInterval(interval);
   }, [dateFilter, sportFilter, teamFilter]);
+
+  if (FINAL_DAY_MODE) {
+    const staticEvents: Event[] = STATIC_SCHEDULE.map((m) => ({
+      id: m.id,
+      date: m.date,
+      start_time: m.start_time,
+      court_id: 0,
+      sport_id: 0,
+      team_a_id: null,
+      team_b_id: null,
+      winner: null,
+      score_a: 0,
+      score_b: 0,
+      courts: { name: m.court },
+      sports: { name: m.sport },
+      team_a: { name: m.team_a },
+      team_b: { name: m.team_b },
+    }));
+    return (
+      <div className="flex flex-col gap-3">
+        {staticEvents.map((event) => (
+          <EventCard key={event.id} event={event} />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -246,9 +275,10 @@ const MEDAL_STYLES: Record<number, { row: string; badge: string }> = {
 };
 
 function LeaderboardTab() {
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<Team[]>(FINAL_DAY_MODE ? STATIC_LEADERBOARD : []);
 
   useEffect(() => {
+    if (FINAL_DAY_MODE) return; // static snapshot above, no live data needed
     fetchTeams();
   }, []);
 
