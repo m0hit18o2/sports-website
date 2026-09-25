@@ -8,7 +8,7 @@
 // in app/section-wars/page.tsx's ScheduleTab + LeaderboardTab and
 // app/page.tsx). None of the underlying live-fetch code was touched or
 // removed — it's only skipped while this flag is true.
-export const FINAL_DAY_MODE = true;
+export const FINAL_DAY_MODE = false;
 
 // Snapshot taken directly from the DB on 2026-08-07 (pulled via direct SQL,
 // since the public API — what the site itself uses — is the thing that's
